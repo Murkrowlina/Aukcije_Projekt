@@ -22,15 +22,16 @@ export default function ProfilePage() {
 			const userData = res.data[0];
 			setUser({
 				...user,
-				name: userData.name,
-				surname: userData.surname,
+				name: userData.ime,
+				surname: userData.prezime,
 				email: userData.email,
-				adress: userData.adress,
-				country: userData.country,
-				town: userData.town,
-				mobile: userData.mobile,
-				zipCode: userData.zipCode
+				adress: userData.adresa,
+				country: userData.drzava,
+				town: userData.grad,
+				mobile: userData.mobitel,
+				zipCode: userData.postanski_broj
 			});
+			console.log(userData)
 		})
 	}, [])
 
@@ -38,31 +39,17 @@ export default function ProfilePage() {
 		<div>
 			<Navbar></Navbar>
 			<main className="flex flex-col min-h-screen items-center gap-[2rem] p-[3rem]">
-				<div className="container mx-auto my-5 p-5">
+				<div className="container mx-auto my-5 p-5 shadow-md">
 					<div className="md:flex no-wrap md:-mx-2">
 						<div className="w-full md:w-3/12 md:mx-2">
-							<div className="p-3 shadow-sm">
+							<div className="p-3">
 								<img className="rounded w-36 h-36" src="https://flowbite.com/docs/images/people/profile-picture-5.jpg" alt="Profile Avatar"></img>
 								<h1 className="text-gray-900 font-bold text-xl leading-8 my-1">{user.name} {user.surname}</h1>
-								<h3 className="text-gray-600 font-lg text-semibold leading-6">Owner at Her Company Inc.</h3>
-								<p className="text-sm text-gray-500 hover:text-gray-600 leading-6">Lorem ipsum dolor sit amet
-									consectetur adipisicing elit.
-									Reprehenderit, eligendi dolorum sequi illum qui unde aspernatur non deserunt</p>
-								<ul className="bg-gray-100 text-gray-600 hover:text-gray-700 hover:shadow py-2 px-3 mt-3 divide-y rounded shadow-sm">
-									<li className="flex items-center py-3">
-										<span>Status</span>
-										<span className="ml-auto"><span
-											className="bg-green-500 py-1 px-2 rounded text-white text-sm">Active</span></span>
-									</li>
-									<li className="flex items-center py-3">
-										<span>Member since</span>
-										<span className="ml-auto">Nov 07, 2016</span>
-									</li>
-								</ul>
+								<h3 className="text-gray-600 font-lg text-semibold leading-6">Registrirala se:</h3>
 							</div>
 						</div>
 						<div className="w-full md:w-9/12 mx-2 h-64 text-lg">
-							<div className="p-3 shadow-sm rounded-sm">
+							<div className="p-3">
 								<div className="flex items-center space-x-2 mb-[1rem] font-semibold text-2xl text-gray-900 leading-8">
 									<span clas="text-green-500">
 										<svg xmlns="http://www.w3.org/2000/svg" height="27" fill="currentColor" className="bi bi-person" viewBox="0 0 16 16">

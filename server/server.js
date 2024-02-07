@@ -15,6 +15,7 @@ app.use(cors({
 app.use(cookieParser());
 
 
+
 const db = mysql.createConnection({
     host: "localhost",
     user: "root",
@@ -27,7 +28,7 @@ app.listen(3001, () => {
 })
 
 app.get("/users", (req, res) => {
-    const q = "SELECT * FROM users"
+    const q = "SELECT * FROM korisnici"
     db.query(q, (err, data) => {
         if (err) {
             return res.json(err)
@@ -38,7 +39,7 @@ app.get("/users", (req, res) => {
 })
 
 app.post("/register", (req, res) => {
-    const sql = "INSERT INTO users(name, surname, email, password, adress, country, town, zip_code, mobile) VALUES (?)"
+    const sql = "INSERT INTO korisnici(ime, prezime, email, sifra, adresa, drzava, grad, postanski_broj, mobitel) VALUES (?)"
     bcrypt.hash(req.body.password.toString(), 10, (err, hash) => {
         if (err) return res.json({ Error: "Error for hashing password." });
         const values = [
@@ -60,24 +61,30 @@ app.post("/register", (req, res) => {
 })
 
 app.post('/login', (req, res) => {
-    const sql = 'SELECT * FROM users WHERE email = ?';
+  
+
+    const sql = 'SELECT * FROM korisnici WHERE email = ?';
     db.query(sql, [req.body.email], (err, data) => {
         if (err) return res.json({ Error: "Login error in server." })
         if (data.length > 0) {
-            bcrypt.compare(req.body.password.toString(), data[0].password, (err, response) => {
+            console.log(data)
+            bcrypt.compare(req.body.password.toString(), data[0].sifra, (err, response) => {
                 if (err) return res.json({ Error: "Password compare error." })
                 if (response) {
-                    const name = data[0].name;
+                    console.log(data[0])
+                    const name = data[0].ime;
                     const email = data[0].email;
-                    const token = jwt.sign({ name, email }, process.env.MY_TOKEN, { expiresIn: new Date(Date.now() + 3600000) });
+                    const token = jwt.sign({ name, email }, process.env.MY_TOKEN, { expiresIn: 1800000 });
                     //res.cookie('TOKEN', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 1000*3000 });
-                    res.setHeader('Set-Cookie', `token=${token}; Path=/; HttpOnly; Secure=false; SameSite=Strict; maxAge: new Date(Date.now() + 3600000)`);
+                    res.setHeader('Set-Cookie', `token=${token}; Path=/; HttpOnly; Secure=false; SameSite=Strict; maxAge: 1800000`);
                     return res.json(true)
-                } else {
+                } 
+                else {
                     return res.json({ Error: "Password not matched." })
                 }
             })
-        } else {
+        } 
+        else {
             return res.json({ Error: "No email exists." })
         }
     })
@@ -96,7 +103,6 @@ const verifyUser = (req, res, next) => {
         return acc;
     }, {});
     const token = cookies['token'];
-
     if (!token) {
         return res.json({ Error: 'You are not authorized' })
     }
@@ -130,7 +136,7 @@ app.get('/userData', (req, res) => {
     }, {});
     const decoded_token = jwt.verify(cookie['token'], process.env.MY_TOKEN);
     
-    const sql = 'SELECT * FROM users WHERE email = ?';
+    const sql = 'SELECT * FROM korisnici WHERE email = ?';
     db.query(sql, [decoded_token.email], (err, data) => {
         if (err) return res.json({ Error: "Error for searching user's data." });
         return res.send(data)
