@@ -1,3 +1,5 @@
+CREATE DATABASE aukcije;
+
 CREATE TABLE korisnici (
 	id INT(255) PRIMARY KEY AUTO_INCREMENT,
     ime VARCHAR(10000000),
@@ -32,3 +34,14 @@ INSERT INTO kategorije(naziv) VALUES ('Sport');
 INSERT INTO kategorije(naziv) VALUES ('Sve za djecu');
 INSERT INTO kategorije(naziv) VALUES ('Telekomunikacija');
 INSERT INTO kategorije(naziv) VALUES ('Umjetnine');
+
+
+CREATE TABLE predmeti(
+	predmet_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    naziv VARCHAR(255) NOT NULL,
+    cijena INT(255) NOT NULL,
+    kategorija_id INT NOT NULL,
+    FOREIGN KEY (kategorija_id) REFERENCES kategorije(kategorija_id),
+    korisnik_id INT NOT NULL,
+    FOREIGN KEY (korisnik_id) REFERENCES korisnici(korisnik_id)
+)

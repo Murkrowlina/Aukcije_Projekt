@@ -61,7 +61,7 @@ app.post("/register", (req, res) => {
 })
 
 app.post('/login', (req, res) => {
-  
+
 
     const sql = 'SELECT * FROM korisnici WHERE email = ?';
     db.query(sql, [req.body.email], (err, data) => {
@@ -78,12 +78,12 @@ app.post('/login', (req, res) => {
                     //res.cookie('TOKEN', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 1000*3000 });
                     res.setHeader('Set-Cookie', `token=${token}; Path=/; HttpOnly; Secure=false; SameSite=Strict; maxAge: 1800000`);
                     return res.json(true)
-                } 
+                }
                 else {
                     return res.json({ Error: "Password not matched." })
                 }
             })
-        } 
+        }
         else {
             return res.json({ Error: "No email exists." })
         }
@@ -135,10 +135,24 @@ app.get('/userData', (req, res) => {
         return acc;
     }, {});
     const decoded_token = jwt.verify(cookie['token'], process.env.MY_TOKEN);
-    
+
     const sql = 'SELECT * FROM korisnici WHERE email = ?';
     db.query(sql, [decoded_token.email], (err, data) => {
         if (err) return res.json({ Error: "Error for searching user's data." });
         return res.send(data)
     })
+})
+
+app.post("/setItem", (req, res) => {
+    const sql = "INSERT INTO predmeti(naziv, cijena, kategorija_id, korisnik_id) VALUES (?)"
+    const values = [
+        req.body.name,
+        req.body.price,
+        req.body.category,
+        req.body.user
+    ]
+    db.query(sql, [values], (err, data) => {
+        if (err) return res.json({ Error: "Inserting data Error in server." })
+        return res.send(data)
+    });
 })
