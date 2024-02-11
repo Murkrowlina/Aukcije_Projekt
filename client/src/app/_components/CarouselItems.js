@@ -184,7 +184,10 @@ export default function CarouselItems() {
             >
                 {sliderInfo.map((slide, index) => {
                     return (
-                        <Link href={slide.link}>
+                        <Link href={{
+                            pathname: slide.link,
+                            query: "categoryID=" + slide.id
+                        }}>
                             <div key={index} className='flex flex-col items-center place-content-center border-solid border-1 border-black rounded-lg h-[15rem] m-[1rem] cursor-pointer card hover:text-white hover:bg-[#0f0e17]'>
                                 {slide.icon}
                                 <p>{slide.name}</p>

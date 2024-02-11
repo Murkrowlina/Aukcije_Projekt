@@ -1,7 +1,36 @@
+"use client"
 import Navbar from "@/app/_components/Navbar"
 import Footer from "@/app/_components/Footer"
+import { useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
+import axios from "axios"
 
 export default function page() {
+    const searchParams = useSearchParams();
+    const search = searchParams.get("categoryID")
+
+    const [item, setItem] = useState({
+        name: "",
+        description: "",
+        starting_bid: 0,
+        category: ""
+    });
+
+    useEffect(() => {
+        axios.get("http://localhost:3001/listItems", { params: { categoryID: search } }, { withCredentials: true }).then(res => {
+            // const itemData = res.data[0];
+            // setItem({
+            // 	...item,
+            // 	name: itemData.naziv,
+            // 	description: itemData.opis,
+            //     starting_bid: itemData.pocetna_cijena,
+            //     category: itemData.kategorija_id
+            // });
+            // console.log(itemData)
+            console.log(res)
+        }).catch((error) => console.log(error));
+    }, []);
+
     return (
         <div>
             <Navbar></Navbar>

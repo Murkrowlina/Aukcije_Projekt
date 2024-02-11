@@ -4,6 +4,7 @@ import Navbar from "@/app/_components/Navbar"
 import Footer from "@/app/_components/Footer"
 import { useState, useEffect } from "react";
 import axios from "axios";
+import Link from "next/link";
 
 export default function ProfilePage() {
 	const [user, setUser] = useState({
@@ -18,13 +19,6 @@ export default function ProfilePage() {
 		zipCode: ""
 	});
 
-	const [item, setItem] = useState({
-		name: "",
-		price: 0,
-		category: "",
-		user: ""
-	});
-	
 	useEffect(() => {
 		axios.get('http://localhost:3001/userData', { withCredentials: true }).then(res => {
 			const userData = res.data[0];
@@ -40,22 +34,16 @@ export default function ProfilePage() {
 				mobile: userData.mobitel,
 				zipCode: userData.postanski_broj
 			});
-			item.user = userData.korisnik_id
 		})
 	}, []);
 
-	const handleSubmit = async (e) => {
-		e.preventDefault();
-		try {
-            const response = await axios.post("http://localhost:3001/setItem", item, { withCredentials: true })
-        } catch (error) {
-            console.log(error)
-        }
-	}
 	return (
 		<div>
 			<Navbar></Navbar>
 			<main className="flex flex-col min-h-screen items-center gap-[2rem] p-[3rem]">
+				<Link
+					href="/prodaja/opis">PRODAJA
+				</Link>
 				<div className="w-[80%] grid grid-cols-4 gap-4 border-solid border-2 p-3">
 					<div className="p-3 col-span-1">
 						<img className="rounded w-36 h-36" src="https://flowbite.com/docs/images/people/profile-picture-5.jpg" alt="Profile Avatar"></img>
@@ -113,33 +101,7 @@ export default function ProfilePage() {
 						</div>
 					</div>
 				</div>
-				<form onSubmit={handleSubmit}>
-					<button type="submit">KLIKNI ME</button>
-					<div>
-						<select onChange={e => { setItem({ ...item, category: e.target.value }) }}>
-							<option value="1">Audio, video, foto</option>
-							<option value="2">Filatelija</option>
-							<option value="3">Film i glazba</option>
-							<option value="4">Graditeljstvo i alati</option>
-							<option value="5">Knjige i tisak</option>
-							<option value="6">Kolekcionarstvo</option>
-							<option value="7">Kozmetika i zdravlje</option>
-							<option value="8">Kuća, ured i vrt</option>
-							<option value="9">Numizmatika</option>
-							<option value="10">Odjevni predmeti</option>
-							<option value="11">Računala</option>
-							<option value="12">Satovi i nakit</option>
-							<option value="13">Sport</option>
-							<option value="14">Sve za djecu</option>
-							<option value="15">Telekomunikacija</option>
-							<option value="16">Umjetnine</option>
-						</select>
-					</div>
-					<input type="text" placeholder="naziv" className="border-solid border-black border-2" onChange={e => { setItem({ ...item, name: e.target.value }) }}></input>
-					<br></br>
-					<input type="text" placeholder="cijena" className="border-solid border-black border-2" onChange={e => { setItem({ ...item, price: e.target.value }) }}></input>
 
-				</form>
 				{/* 
 				<div className="container mx-auto my-5 p-5 shadow-md">
 					<div className="md:flex no-wrap md:-mx-2">

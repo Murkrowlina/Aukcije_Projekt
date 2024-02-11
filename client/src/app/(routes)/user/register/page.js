@@ -82,6 +82,6 @@ export default function Register() {
                 </form>
             </main>
             <Footer></Footer>
-        </div>
+        </div >
     )
 }

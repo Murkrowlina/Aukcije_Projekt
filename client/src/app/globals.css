@@ -6,3 +6,36 @@ div.card {
     box-shadow: rgba(0, 0, 0, 0.3) 0px 30px 40px -30px, rgba(10, 37, 64, 0.35) 0px -1px 10px 0px inset;
 }
 
+/* @media only screen and (min-width: 640px){
+    main > div:nth-of-type(1) {
+        width: 80%;
+    }
+}
+
+@media only screen and (min-width: 768px){
+    main > div:nth-of-type(1) {
+        width: 70%;
+        background-color: orange;
+    }
+}
+
+@media only screen and (min-width: 1280px){
+    main > div:nth-of-type(1) {
+        width: 100%;
+        background-color: black;
+    }
+}
+
+@media only screen and (min-width: 1536px){
+    main > div:nth-of-type(1) {
+        width: 40%;
+        background-color: red;
+    }
+}
+
+@media only screen and (min-width: 640px){
+    main > div:nth-of-type(1) {
+        width: 80%;
+        background-color: aqua;
+    }
+} */

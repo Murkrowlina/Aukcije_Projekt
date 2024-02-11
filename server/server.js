@@ -14,8 +14,6 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
-
-
 const db = mysql.createConnection({
     host: "localhost",
     user: "root",
@@ -61,22 +59,18 @@ app.post("/register", (req, res) => {
 })
 
 app.post('/login', (req, res) => {
-
-
     const sql = 'SELECT * FROM korisnici WHERE email = ?';
     db.query(sql, [req.body.email], (err, data) => {
         if (err) return res.json({ Error: "Login error in server." })
         if (data.length > 0) {
-            console.log(data)
             bcrypt.compare(req.body.password.toString(), data[0].sifra, (err, response) => {
                 if (err) return res.json({ Error: "Password compare error." })
                 if (response) {
-                    console.log(data[0])
                     const name = data[0].ime;
                     const email = data[0].email;
-                    const token = jwt.sign({ name, email }, process.env.MY_TOKEN, { expiresIn: 1800000 });
+                    const token = jwt.sign({ name, email }, process.env.MY_TOKEN, { expiresIn: 1800 });
                     //res.cookie('TOKEN', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 1000*3000 });
-                    res.setHeader('Set-Cookie', `token=${token}; Path=/; HttpOnly; Secure=false; SameSite=Strict; maxAge: 1800000`);
+                    res.setHeader('Set-Cookie', `token=${token}; Path=/; HttpOnly; Secure=false; SameSite=Strict; maxAge: 1800`);
                     return res.json(true)
                 }
                 else {
@@ -103,6 +97,7 @@ const verifyUser = (req, res, next) => {
         return acc;
     }, {});
     const token = cookies['token'];
+
     if (!token) {
         return res.json({ Error: 'You are not authorized' })
     }
@@ -144,15 +139,34 @@ app.get('/userData', (req, res) => {
 })
 
 app.post("/setItem", (req, res) => {
-    const sql = "INSERT INTO predmeti(naziv, cijena, kategorija_id, korisnik_id) VALUES (?)"
-    const values = [
-        req.body.name,
-        req.body.price,
-        req.body.category,
-        req.body.user
-    ]
-    db.query(sql, [values], (err, data) => {
-        if (err) return res.json({ Error: "Inserting data Error in server." })
-        return res.send(data)
-    });
+    const cookie = req.headers.cookie.split('; ').reduce((acc, current) => {
+        const [name, ...value] = current.split('=');
+        acc[name] = value.join('=');
+        return acc;
+    }, {});
+    const decoded_token = jwt.verify(cookie['token'], process.env.MY_TOKEN);
+
+    db.query("SELECT * FROM korisnici WHERE email = ?", [decoded_token.email], (err, data) => {
+        const values = [
+            req.body.name,
+            req.body.description,
+            req.body.starting_price,
+            req.body.category,
+            data[0].korisnik_id
+        ]
+        db.query("INSERT INTO predmeti(naziv, opis, pocetna_cijena, kategorija_id, korisnik_id) VALUES (?)", [values], (err, data) => {
+            if (err) return res.json({ Error: "Inserting data Error in server." })
+            return res.send(data)
+        });
+    })
 })
+
+
+app.get("/listItems", (req, res) => {
+    console.log(req.query.categoryID)
+    db.query("SELECT * FROM predmeti WHERE kategorija_id = ?", [req.query.categoryID], (err, data) => {
+        if (err) return res.json({ Error: "Error for searching user's data." });
+        return res.send(data)
+    })
+})
+
