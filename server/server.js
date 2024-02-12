@@ -5,6 +5,8 @@ import jwt from 'jsonwebtoken'
 import bcrypt from "bcrypt"
 import cookieParser from "cookie-parser"
 import 'dotenv/config'
+import multer from "multer"
+import path from "path"
 
 const app = express();
 app.use(express.json());
@@ -146,6 +148,13 @@ app.post("/setItem", (req, res) => {
     }, {});
     const decoded_token = jwt.verify(cookie['token'], process.env.MY_TOKEN);
 
+    uploadImages(req, res, function (err) {
+        if (err) {
+            return res.status(400).send({ message: err.message });
+        }
+        res.json(req.files);
+    });
+
     db.query("SELECT * FROM korisnici WHERE email = ?", [decoded_token.email], (err, data) => {
         const values = [
             req.body.name,
@@ -170,3 +179,40 @@ app.get("/listItems", (req, res) => {
     })
 })
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads');
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+        if (
+            file.mimetype == 'image/png' ||
+            file.mimetype == 'image/jpg' ||
+            file.mimetype == 'image/jpeg'
+        ) {
+            cb(null, true);
+        } else {
+            cb(null, false);
+            return cb(new Error('Only .png, .jpg and .jpeg format allowed!'));
+        }
+    }
+});
+
+const uploadImages = upload.array('image');
+
+app.post("/uploadImage", (req, res) => {
+    uploadImages(req, res, function (err) {
+        if (err) {
+            return res.status(400).send({ message: err.message });
+        }
+        res.json(req.files);
+    });
+});
+
+app.use('/uploads', express.static('uploads'))

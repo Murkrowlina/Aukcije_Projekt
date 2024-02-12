@@ -10,8 +10,7 @@ export default function page() {
         description: "",
         starting_price: 0,
         category: "",
-        img_preview: "",
-        img_raw: ""
+        img: ""
     });
 
     const handleSubmit = async (e) => {
@@ -19,23 +18,38 @@ export default function page() {
 
         let formData = new FormData();
         await formData.append('image', image.raw);
-        await axios
-            .post(`http://localhost:3001/uploadImage`, formData, {
+        setItem({
+            ...item,
+            img: formData
+        })
+        console.log(formData)
+        // await axios
+        //     .post(`http://localhost:3001/uploadImage`, formData, {
+        //         headers: {
+        //             'Content-Type': 'multipart/form-data',
+        //         },
+        //         withCredentials: true,
+        //     })
+        //     .then(res => {
+        //         console.log(res.data)
+        //         return res.data;
+        //     })
+        //     .catch(err => {
+        //         return err;
+        //     });
+
+
+        console.log(item)
+        try {
+            const response = await axios.post("http://localhost:3001/setItem", item, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                },
+                }, withCredentials: true
             })
-            .then(res => {
-                return res.data;
-            });
-
-
-        // console.log(item)
-        // try {
-        //     const response = await axios.post("http://localhost:3001/setItem", item, { withCredentials: true })
-        // } catch (error) {
-        //     console.log(error)
-        // }
+            console.log(res.data)
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     const [image, setImage] = useState({
@@ -50,7 +64,6 @@ export default function page() {
                 raw: e.target.files[0],
             });
         }
-        console.log(image)
     };
 
     return (
