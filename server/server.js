@@ -148,22 +148,16 @@ app.post("/setItem", (req, res) => {
     }, {});
     const decoded_token = jwt.verify(cookie['token'], process.env.MY_TOKEN);
 
-    uploadImages(req, res, function (err) {
-        if (err) {
-            return res.status(400).send({ message: err.message });
-        }
-        res.json(req.files);
-    });
-
     db.query("SELECT * FROM korisnici WHERE email = ?", [decoded_token.email], (err, data) => {
         const values = [
             req.body.name,
             req.body.description,
             req.body.starting_price,
+            new Date().toISOString(),
             req.body.category,
             data[0].korisnik_id
         ]
-        db.query("INSERT INTO predmeti(naziv, opis, pocetna_cijena, kategorija_id, korisnik_id) VALUES (?)", [values], (err, data) => {
+        db.query("INSERT INTO predmeti(naziv, opis, pocetna_cijena, stavljeno_vrijeme, zavrsteka_vrijeme, kategorija_id, korisnik_id) VALUES (?)", [values], (err, data) => {
             if (err) return res.json({ Error: "Inserting data Error in server." })
             return res.send(data)
         });
@@ -207,7 +201,7 @@ const upload = multer({
 const uploadImages = upload.array('image');
 
 app.post("/uploadImage", (req, res) => {
-    uploadImages(req, res, function (err) {
+    uploadImages(req, res, function (err) {    
         if (err) {
             return res.status(400).send({ message: err.message });
         }

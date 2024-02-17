@@ -22,7 +22,7 @@ export default function page() {
             ...item,
             img: formData
         })
-        console.log(formData)
+
         // await axios
         //     .post(`http://localhost:3001/uploadImage`, formData, {
         //         headers: {
@@ -38,15 +38,12 @@ export default function page() {
         //         return err;
         //     });
 
-
-        console.log(item)
         try {
             const response = await axios.post("http://localhost:3001/setItem", item, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 }, withCredentials: true
             })
-            console.log(res.data)
         } catch (error) {
             console.log(error)
         }
@@ -115,7 +112,7 @@ export default function page() {
                             <input type="number" required step=".01" min="0" id="cijena" onChange={e => { setItem({ ...item, starting_price: e.target.value }) }} className="rounded border border-gray-400 text-lg leading-[18px] p-[11px] w-fit"></input>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label htmlFor="image" className="font-bold block text-gray-600 cursor-text text-md leading-[140%]">Choose a profile picture:</label>
+                            <label htmlFor="image" className="font-bold block text-gray-600 cursor-text text-md leading-[140%]"></label>
                             <input type="file" onChange={handlePhotoChange} id="image" name="image" accept="image/png, image/jpeg"></input>
                         </div>
                     </div>
