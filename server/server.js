@@ -154,6 +154,7 @@ app.post("/setItem", (req, res) => {
             req.body.description,
             req.body.starting_price,
             new Date().toISOString(),
+            new Date() - 
             req.body.category,
             data[0].korisnik_id
         ]

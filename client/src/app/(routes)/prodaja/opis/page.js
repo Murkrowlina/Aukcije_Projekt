@@ -10,19 +10,22 @@ export default function page() {
         description: "",
         starting_price: 0,
         category: "",
-        img: ""
+        duration_time: ""
     });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         let formData = new FormData();
+        for (const key in item) {
+            formData.append(key, item[key]);
+        }
         await formData.append('image', image.raw);
         setItem({
             ...item,
             img: formData
         })
-
+        console.log(formData)
         // await axios
         //     .post(`http://localhost:3001/uploadImage`, formData, {
         //         headers: {
@@ -38,6 +41,8 @@ export default function page() {
         //         return err;
         //     });
 
+
+        console.log(item)
         try {
             const response = await axios.post("http://localhost:3001/setItem", item, {
                 headers: {
@@ -110,6 +115,10 @@ export default function page() {
                         <div className="flex flex-col gap-2">
                             <label htmlFor="cijena" className="font-bold block text-gray-600 cursor-text text-md leading-[140%]">Početna cijena <span className="text-red-600">(upisujete u EUR / €)</span></label>
                             <input type="number" required step=".01" min="0" id="cijena" onChange={e => { setItem({ ...item, starting_price: e.target.value }) }} className="rounded border border-gray-400 text-lg leading-[18px] p-[11px] w-fit"></input>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label htmlFor="vrijeme" className="font-bold block text-gray-600 cursor-text text-md leading-[140%]">Istječe za: <span className="text-red-600">(u satu)</span></label>
+                            <input type="number" required step="0" min="0" id="vrijeme" onChange={e => { setItem({ ...item, duration_time: e.target.value }) }} className="rounded border border-gray-400 text-lg leading-[18px] p-[11px] w-fit"></input>
                         </div>
                         <div className="flex flex-col gap-2">
                             <label htmlFor="image" className="font-bold block text-gray-600 cursor-text text-md leading-[140%]"></label>
