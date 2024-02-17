@@ -41,6 +41,8 @@ CREATE TABLE predmeti(
     naziv VARCHAR(255) NOT NULL,
     opis VARCHAR(255) NOT NULL,
     pocetna_cijena INT(255) NOT NULL,
+    slika VARCHAR(255) NOT NULL,
+    vrijeme TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     kategorija_id INT NOT NULL,
     FOREIGN KEY (kategorija_id) REFERENCES kategorije(kategorija_id),
     korisnik_id INT NOT NULL,
