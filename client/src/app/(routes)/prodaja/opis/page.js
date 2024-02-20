@@ -8,9 +8,14 @@ export default function page() {
     const [item, setItem] = useState({
         name: "",
         description: "",
-        starting_price: 0,
+        bid: 0,
         category: "",
-        duration_time: ""
+        duration: "",
+    });
+
+    const [image, setImage] = useState({
+        preview: '',
+        raw: ''
     });
 
     const handleSubmit = async (e) => {
@@ -21,30 +26,9 @@ export default function page() {
             formData.append(key, item[key]);
         }
         await formData.append('image', image.raw);
-        setItem({
-            ...item,
-            img: formData
-        })
-        console.log(formData)
-        // await axios
-        //     .post(`http://localhost:3001/uploadImage`, formData, {
-        //         headers: {
-        //             'Content-Type': 'multipart/form-data',
-        //         },
-        //         withCredentials: true,
-        //     })
-        //     .then(res => {
-        //         console.log(res.data)
-        //         return res.data;
-        //     })
-        //     .catch(err => {
-        //         return err;
-        //     });
-
-
-        console.log(item)
+        
         try {
-            const response = await axios.post("http://localhost:3001/setItem", item, {
+            const response = await axios.post("http://localhost:3001/setItem", formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 }, withCredentials: true
@@ -53,11 +37,6 @@ export default function page() {
             console.log(error)
         }
     }
-
-    const [image, setImage] = useState({
-        preview: '',
-        raw: '',
-    });
 
     const handlePhotoChange = (e) => {
         if (e.target.files.length) {
@@ -114,15 +93,15 @@ export default function page() {
                         </div>
                         <div className="flex flex-col gap-2">
                             <label htmlFor="cijena" className="font-bold block text-gray-600 cursor-text text-md leading-[140%]">Početna cijena <span className="text-red-600">(upisujete u EUR / €)</span></label>
-                            <input type="number" required step=".01" min="0" id="cijena" onChange={e => { setItem({ ...item, starting_price: e.target.value }) }} className="rounded border border-gray-400 text-lg leading-[18px] p-[11px] w-fit"></input>
+                            <input type="number" required step=".01" min="0" id="cijena" onChange={e => { setItem({ ...item, bid: e.target.value }) }} className="rounded border border-gray-400 text-lg leading-[18px] p-[11px] w-fit"></input>
                         </div>
                         <div className="flex flex-col gap-2">
                             <label htmlFor="vrijeme" className="font-bold block text-gray-600 cursor-text text-md leading-[140%]">Istječe za: <span className="text-red-600">(u satu)</span></label>
-                            <input type="number" required step="0" min="0" id="vrijeme" onChange={e => { setItem({ ...item, duration_time: e.target.value }) }} className="rounded border border-gray-400 text-lg leading-[18px] p-[11px] w-fit"></input>
+                            <input type="number" required step="0" min="0" id="vrijeme" onChange={e => { setItem({ ...item, duration: e.target.value }) }} className="rounded border border-gray-400 text-lg leading-[18px] p-[11px] w-fit"></input>
                         </div>
                         <div className="flex flex-col gap-2">
                             <label htmlFor="image" className="font-bold block text-gray-600 cursor-text text-md leading-[140%]"></label>
-                            <input type="file" onChange={handlePhotoChange} id="image" name="image" accept="image/png, image/jpeg"></input>
+                            <input type="file" required onChange={handlePhotoChange} id="image" name="image" accept="image/png, image/jpeg"></input>
                         </div>
                     </div>
                     <button type="submit" value="dalje" className="bg-[#0f0e17] text-white hover:bg-[#e53170] p-2 rounded-lg">POSTAVI NA AUKCIJE</button>

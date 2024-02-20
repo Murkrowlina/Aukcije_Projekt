@@ -1,7 +1,7 @@
 CREATE DATABASE aukcije;
 
 CREATE TABLE korisnici (
-	korisnik_id INT(255) PRIMARY KEY AUTO_INCREMENT,
+	korisnikID INT(255) PRIMARY KEY AUTO_INCREMENT,
     ime VARCHAR(10000000),
     prezime VARCHAR(10000000),
     email VARCHAR(10000000),
@@ -9,13 +9,13 @@ CREATE TABLE korisnici (
     adresa VARCHAR(10000000),
     drzava VARCHAR(10000000),
     grad VARCHAR(10000000),
-    postanski_broj VARCHAR(10000000),
+    postanskiBroj VARCHAR(10000000),
     mobitel VARCHAR(10000000)
 )
 
 // KATEGORIJE
 CREATE TABLE kategorije (
-    kategorija_id INT(16) PRIMARY KEY AUTO_INCREMENT,
+    kategorijaID INT(16) PRIMARY KEY AUTO_INCREMENT,
     naziv VARCHAR(50)
 )
 INSERT INTO kategorije(naziv) VALUES ('Audio, video, foto');
@@ -37,14 +37,30 @@ INSERT INTO kategorije(naziv) VALUES ('Umjetnine');
 
 
 CREATE TABLE predmeti(
-	predmet_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+	predmetID VARCHAR(765) PRIMARY KEY NOT NULL,
     naziv VARCHAR(255) NOT NULL,
     opis VARCHAR(255) NOT NULL,
-    pocetna_cijena INT(255) NOT NULL,
+    pocetnaCijena INT(255) NOT NULL,
     slika VARCHAR(255) NOT NULL,
-    vrijeme TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    kategorija_id INT NOT NULL,
-    FOREIGN KEY (kategorija_id) REFERENCES kategorije(kategorija_id),
-    korisnik_id INT NOT NULL,
-    FOREIGN KEY (korisnik_id) REFERENCES korisnici(korisnik_id)
+    stavljeno DATETIME DEFAULT CURRENT_TIMESTAMP,
+    zavrsetak DATETIME DEFAULT CURRENT_TIMESTAMP,
+    stoperica TIME DEFAULT CURRENT_TIMESTAMP,
+    sati INT,
+    kategorijaID INT NOT NULL,
+    FOREIGN KEY (kategorijaID) REFERENCES kategorije(kategorijaID),
+    korisnikID INT NOT NULL,
+    FOREIGN KEY (korisnikID) REFERENCES korisnici(korisnikID),
+    ponudaID INT NOT NULL, 
+    FOREIGN KEY (ponudaID) REFERENCES ponude(ponudaID)
+)
+
+CREATE TABLE ponude (
+	ponudaID VARCHAR(765) PRIMARY KEY NOT NULL,
+    najvisaPonuda INT,
+    korisnikID INT,
+    FOREIGN KEY(korisnikID) REFERENCES korisnici(korisnikID),
+    ponudacID INT,
+    FOREIGN KEY(ponudacID) REFERENCES korisnici(korisnikID),
+    predmetID VARCHAR(765),
+    FOREIGN KEY(predmetID) REFERENCES predmeti(predmetID)
 )

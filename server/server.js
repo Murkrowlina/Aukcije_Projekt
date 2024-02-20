@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser"
 import 'dotenv/config'
 import multer from "multer"
 import path from "path"
+import cron from "node-cron";
 
 const app = express();
 app.use(express.json());
@@ -26,6 +27,8 @@ const db = mysql.createConnection({
 app.listen(3001, () => {
     console.log("I hear you. :)")
 })
+
+app.use('/uploads', express.static('uploads'))
 
 app.get("/users", (req, res) => {
     const q = "SELECT * FROM korisnici"
@@ -140,40 +143,6 @@ app.get('/userData', (req, res) => {
     })
 })
 
-app.post("/setItem", (req, res) => {
-    const cookie = req.headers.cookie.split('; ').reduce((acc, current) => {
-        const [name, ...value] = current.split('=');
-        acc[name] = value.join('=');
-        return acc;
-    }, {});
-    const decoded_token = jwt.verify(cookie['token'], process.env.MY_TOKEN);
-
-    db.query("SELECT * FROM korisnici WHERE email = ?", [decoded_token.email], (err, data) => {
-        const values = [
-            req.body.name,
-            req.body.description,
-            req.body.starting_price,
-            new Date().toISOString(),
-            new Date() - 
-            req.body.category,
-            data[0].korisnik_id
-        ]
-        db.query("INSERT INTO predmeti(naziv, opis, pocetna_cijena, stavljeno_vrijeme, zavrsteka_vrijeme, kategorija_id, korisnik_id) VALUES (?)", [values], (err, data) => {
-            if (err) return res.json({ Error: "Inserting data Error in server." })
-            return res.send(data)
-        });
-    })
-})
-
-
-app.get("/listItems", (req, res) => {
-    console.log(req.query.categoryID)
-    db.query("SELECT * FROM predmeti WHERE kategorija_id = ?", [req.query.categoryID], (err, data) => {
-        if (err) return res.json({ Error: "Error for searching user's data." });
-        return res.send(data)
-    })
-})
-
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads');
@@ -199,15 +168,306 @@ const upload = multer({
     }
 });
 
-const uploadImages = upload.array('image');
+const formatTime = (date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
 
-app.post("/uploadImage", (req, res) => {
-    uploadImages(req, res, function (err) {    
-        if (err) {
-            return res.status(400).send({ message: err.message });
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+const randomID = (table) => {
+    let enterWhileLoop = 1;
+    let randomNum = 0;
+
+    if (table == "predmet") {
+        while (enterWhileLoop > 0) {
+            randomNum = Math.round(Math.random() * 1000000);
+            const data = db.query("SELECT predmetID FROM predmeti WHERE predmetID LIKE ?", [randomNum], (err, data) => {
+                return data;
+            });
+
+            enterWhileLoop = data.length;
         }
-        res.json(req.files);
-    });
-});
+    }
+    else {
+        while (enterWhileLoop > 0) {
+            randomNum = Math.round(Math.random() * 1000000);
+            const data = db.query("SELECT ponudaID FROM predmeti WHERE ponudaID LIKE ?", [randomNum], (err, data) => {
+                return data;
+            });
 
-app.use('/uploads', express.static('uploads'))
+            enterWhileLoop = data.length;
+        }
+    }
+
+    return `${randomNum}`;
+}
+
+const setUpBidTable = (bid, itemID, userID, bidID) => {
+    const values = [
+        bidID,
+        `${bid}`,
+        userID,
+        `${itemID}`
+    ]
+    db.query("INSERT INTO ponude(ponudaID, najvisaPonuda, korisnikID, predmetID) VALUES (?)", [values]);
+    db.query(`UPDATE predmeti SET ponudaID = ${bidID} WHERE predmetID LIKE ?`, [itemID])
+}
+
+app.post("/setItem", upload.single("image"), (req, res) => {
+    const cookie = req.headers.cookie.split('; ').reduce((acc, current) => {
+        const [name, ...value] = current.split('=');
+        acc[name] = value.join('=');
+        return acc;
+    }, {});
+    const decoded_token = jwt.verify(cookie['token'], process.env.MY_TOKEN);
+
+    db.query("SELECT * FROM korisnici WHERE email = ?", [decoded_token.email], (err, data) => {
+        const imagePath = path.join("uploads", req.file.filename);
+        const userID = data[0].korisnikID
+        const itemID = randomID("predmet");
+        const bidID = randomID("ponuda");
+        const date = new Date();
+        const expirationDate = new Date(date.getTime() + (req.body.duration * 60 * 60 * 1000))
+
+        const values = [
+            itemID,
+            req.body.name,
+            req.body.description,
+            req.body.bid,
+            imagePath,
+            formatTime(date),
+            formatTime(expirationDate),
+            `${req.body.duration}:00:00`,
+            req.body.duration,
+            req.body.category,
+            userID
+        ]
+
+        db.query("INSERT INTO predmeti(predmetID, naziv, opis, pocetnaCijena, slika, stavljeno, zavrsetak, stoperica, sati, kategorijaID, korisnikID) VALUES (?)", [values], (err, data) => {
+            if (err) return res.json({ Error: "Inserting data Error in server." })
+            setUpBidTable(req.body.starting_price, itemID, userID, bidID);
+            return res.send(data);
+        });
+    })
+})
+
+app.get("/listItems", (req, res) => {
+    db.query(`SELECT *, YEAR(zavrsetak), MONTH(zavrsetak), DAY(zavrsetak), TIME(zavrsetak) FROM predmeti WHERE stoperica != '00:00:00' AND kategorijaID = ?`, [req.query.categoryID], (err, data) => {
+        if (err) return res.json({ Error: "Error for searching user's data." });
+        updateExpiredAuctions(data);
+        return res.send(data);
+    })
+})
+
+app.get("/getItem", (req, res) => {
+    let user = "";
+    db.query(`SELECT korisnici.ime, korisnici.prezime
+    FROM ponude
+    INNER JOIN korisnici ON ponude.ponudacID = korisnici.korisnikID 
+    WHERE ponude.ponudacID IS NOT NULL AND ponude.predmetID = ?`, [req.query.predmetID], (err, data) => {
+        if (err) return res.json({ ERROR: "Error for searching item's data" });
+        if (data.length > 0) {
+            user = `${data[0].ime} ${data[0].prezime}`;
+        }
+    })
+
+    db.query(`SELECT *, 
+    YEAR(zavrsetak), MONTH(zavrsetak), DAY(zavrsetak), TIME(zavrsetak), 
+    HOUR(stoperica), MINUTE(stoperica), SECOND(stoperica)
+    FROM predmeti
+    INNER JOIN kategorije ON predmeti.kategorijaID = kategorije.kategorijaID
+    INNER JOIN korisnici ON predmeti.korisnikID = korisnici.korisnikID
+    INNER JOIN ponude ON predmeti.ponudaID = ponude.ponudaID
+    WHERE predmeti.predmetID = ?`, [req.query.predmetID], (err, data) => {
+        if (err) return res.json({ ERROR: "Error for searching item's data" });
+        setUpExpiration(data, true)
+        data[0].ponudac = user
+        return res.send(data);
+    })
+})
+
+const setUpExpiration = (data, cronning) => {
+    let schedule = cron.schedule(`*/1 * * * * *`, async () => {
+        await updateExpiredAuctions(data);
+    });
+    if (!cronning) return schedule.stop();
+    schedule.start();
+}
+
+app.post("/updateBid", (req, res) => {
+    const cookie = req.headers.cookie.split('; ').reduce((acc, current) => {
+        const [name, ...value] = current.split('=');
+        acc[name] = value.join('=');
+        return acc;
+    }, {});
+    const decoded_token = jwt.verify(cookie['token'], process.env.MY_TOKEN);
+
+    db.query("SELECT * FROM korisnici WHERE email = ?", [decoded_token.email], (err, data) => {
+        const userID = data[0].korisnikID
+        db.query(`UPDATE ponude SET ponudacID = ${userID}, najvisaPonuda = ${req.body.bid.bidding} WHERE ${req.body.bid.bidding} > najvisaPonuda AND korisnikID != ${userID} AND predmetID = ?`, (req.body.bid.itemID), (err, data) => {
+            if (err) return res.json(err);
+            console.log("hel");
+            setUpExpiration(data, true);
+            return res.send(data);
+        })
+    })
+})
+
+const updateExpiredAuctions = (data) => {
+    for (let i = 0; i < data.length; i++) {
+        const stavljeno = new Date(data[i].stavljeno);
+        const date = new Date();
+        let leftovers = 0;
+
+        let secondsDifference = date.getSeconds() + (60 - stavljeno.getSeconds());
+        let minutesDifference = date.getMinutes() + (60 - stavljeno.getMinutes());
+
+        if (stavljeno.getDate() == date.getDate() && stavljeno.getMonth() == date.getMonth() && stavljeno.getFullYear() == date.getFullYear()) {
+            let hoursDifference = (date.getHours() > stavljeno.getHours()) ? date.getHours() - stavljeno.getHours() : 1;
+
+            console.log(data[i].naziv);
+            if (secondsDifference != 0 && minutesDifference != 0) {
+                if (secondsDifference % 60 != 0 && secondsDifference > 60) {
+                    leftovers = secondsDifference % 60;
+                    minutesDifference += Math.floor(secondsDifference / 60);;
+                    secondsDifference = leftovers;
+                }
+
+                if (minutesDifference % 60 != 0 && minutesDifference > 60) {
+                    leftovers = minutesDifference % 60;
+                    minutesDifference = leftovers;
+                }
+            }
+
+            hoursDifference = data[i].sati - hoursDifference - 1;
+            console.log(hoursDifference);
+
+            leftovers = 0 - secondsDifference * (-1);
+            secondsDifference = 60 - leftovers;
+            leftovers = 0 - minutesDifference * (-1);
+            minutesDifference = 60 - leftovers;
+
+            if (hoursDifference < 0) {
+                db.query(`UPDATE predmeti SET stoperica = '00:00:00'
+                WHERE predmetID = ${data[i].predmetID}`);
+                return;
+            }
+
+            db.query(`UPDATE predmeti SET stoperica = '${hoursDifference}:${minutesDifference}:${secondsDifference}'
+                    WHERE predmetID = ${data[i].predmetID}`);
+        }
+        else {
+            let hoursDifference = date.getHours() + (24 - stavljeno.getHours());
+
+            if (secondsDifference != 0 && minutesDifference != 0) {
+                if (secondsDifference % 60 != 0 && secondsDifference > 60) {
+                    leftovers = secondsDifference % 60;
+                    minutesDifference += Math.floor(secondsDifference / 60);;
+                    secondsDifference = leftovers;
+                }
+
+                if (minutesDifference % 60 != 0 && minutesDifference > 60) {
+                    leftovers = minutesDifference % 60;
+                    minutesDifference = leftovers;
+                }
+            }
+
+            hoursDifference = data[i].sati - hoursDifference;
+            leftovers = 0 - secondsDifference * (-1);
+            secondsDifference = 60 - leftovers;
+            leftovers = 0 - minutesDifference * (-1);
+            minutesDifference = 60 - leftovers;
+
+            if (hoursDifference < 0) {
+                db.query(`UPDATE predmeti SET stoperica = '00:00:00'
+                WHERE predmetID = ${data[i].predmetID}`);
+                return;
+            }
+
+            db.query(`UPDATE predmeti SET stoperica = '${hoursDifference}:${minutesDifference}:${secondsDifference}'
+                    WHERE predmetID = ${data[i].predmetID}`);
+        }
+    }
+}
+
+app.get("/activeItems", (req, res) => {
+    const cookie = req.headers.cookie.split('; ').reduce((acc, current) => {
+        const [name, ...value] = current.split('=');
+        acc[name] = value.join('=');
+        return acc;
+    }, {});
+    const decoded_token = jwt.verify(cookie['token'], process.env.MY_TOKEN);
+
+    db.query(`SELECT * FROM predmeti 
+    RIGHT OUTER JOIN korisnici ON predmeti.korisnikID = korisnici.korisnikID
+    RIGHT OUTER JOIN ponude ON predmeti.predmetID = ponude.predmetID
+    WHERE stoperica != '00:00:00' AND korisnici.email = '${decoded_token.email}'`, (err, data) => {
+        if (err) return res.json(err);
+        updateExpiredAuctions(data)
+        return res.send(data);
+    })
+})
+
+app.get("/expiredItems", (req, res) => {
+    const cookie = req.headers.cookie.split('; ').reduce((acc, current) => {
+        const [name, ...value] = current.split('=');
+        acc[name] = value.join('=');
+        return acc;
+    }, {});
+    const decoded_token = jwt.verify(cookie['token'], process.env.MY_TOKEN);
+
+    db.query(`SELECT * FROM predmeti 
+    RIGHT OUTER JOIN korisnici ON predmeti.korisnikID = korisnici.korisnikID
+    RIGHT OUTER JOIN ponude ON predmeti.predmetID = ponude.predmetID
+    WHERE stoperica = '00:00:00' AND korisnici.email = '${decoded_token.email}'`, (err, data) => {
+        if (err) return res.json(err);
+        return res.send(data);
+    })
+})
+
+app.get("/soldItems", (req, res) => {
+    const cookie = req.headers.cookie.split('; ').reduce((acc, current) => {
+        const [name, ...value] = current.split('=');
+        acc[name] = value.join('=');
+        return acc;
+    }, {});
+    const decoded_token = jwt.verify(cookie['token'], process.env.MY_TOKEN);
+
+    db.query(`SELECT * FROM predmeti 
+    RIGHT OUTER JOIN korisnici ON predmeti.korisnikID = korisnici.korisnikID
+    RIGHT OUTER JOIN ponude ON predmeti.predmetID = ponude.predmetID
+    WHERE stoperica = '00:00:00' AND korisnici.email = '${decoded_token.email}' AND (ponude.najvisaPonuda > predmeti.pocetnaCijena OR ponude.najvisaPonuda = predmeti.pocetnaCijena)`, (err, data) => {
+        if (err) return res.json(err);
+        console.log(data);
+        return res.send(data);
+    })
+})
+
+app.get("/newItems", (req, res) => {
+    db.query(`SELECT * FROM predmeti 
+    RIGHT OUTER JOIN korisnici ON predmeti.korisnikID = korisnici.korisnikID
+    RIGHT OUTER JOIN ponude ON predmeti.predmetID = ponude.predmetID
+    WHERE stoperica != '00:00:00'
+    ORDER BY stoperica DESC`, (err, data) => {
+        if (err) return res.json(err);
+        updateExpiredAuctions(data)
+        return res.send(data);
+    })
+})
+
+app.get("/endingItems", (req, res) => {
+    db.query(`SELECT * FROM predmeti 
+    RIGHT OUTER JOIN korisnici ON predmeti.korisnikID = korisnici.korisnikID
+    RIGHT OUTER JOIN ponude ON predmeti.predmetID = ponude.predmetID
+    WHERE stoperica != '00:00:00'
+    ORDER BY stoperica`, (err, data) => {
+        if (err) return res.json(err);
+        updateExpiredAuctions(data)
+        return res.send(data);
+    })
+})
