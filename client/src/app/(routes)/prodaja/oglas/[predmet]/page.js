@@ -1,11 +1,12 @@
 "use client"
 import Footer from "@/app/_components/Footer"
 import Navbar from "@/app/_components/Navbar"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import axios from "axios"
 
 export default function itemInformation() {
+    const router = useRouter();
     const searchParams = useSearchParams();
     const search = searchParams.get("predmet");
     const [item, setItem] = useState([]);
@@ -28,6 +29,7 @@ export default function itemInformation() {
                             name: itemData.naziv,
                             description: itemData.opis,
                             bid: itemData.najvisaPonuda,
+                            price: itemData.pocetnaCijena,
                             image: "http://localhost:3001/" + itemData.slika,
                             expiration_date: `${itemData["YEAR(zavrsetak)"]}-${itemData["MONTH(zavrsetak)"]}-${itemData["DAY(zavrsetak)"]}  ${itemData["TIME(zavrsetak)"]}`,
                             timer: `${itemData["HOUR(stoperica)"]}:${itemData["MINUTE(stoperica)"]}:${itemData["SECOND(stoperica)"]}`,
@@ -56,7 +58,7 @@ export default function itemInformation() {
     
         axios.post("http://localhost:3001/updateBid", { bid }, { withCredentials: true })
             .then(response => {
-                console.log(response);
+                if(response.data.Error == "User not logged in") return router.replace('/user/login');
             })
             .catch(error => {
                 console.log(error);
@@ -99,6 +101,11 @@ export default function itemInformation() {
                                         <div className="text-2xl w-[10rem] mb-4 bg-[#0f0e17] text-white p-2 rounded-lg">
                                             <p>Ponuda: {item.bid} €</p>
                                         </div>
+                                        <div className="flex flex-row justify-between gap-3">
+                                            <p>Početna cijena:</p>
+                                            <p>{item.price}€</p>
+                                        </div>
+                                        <span className="border-b-2 border-solid"></span>
                                         <div className="flex flex-row justify-between gap-3">
                                             <p>Završava za:</p>
                                             <p>{item.timer}</p>

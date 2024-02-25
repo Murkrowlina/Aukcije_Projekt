@@ -10,7 +10,6 @@ import axios from 'axios';
 
 export default function Navbar() {
     const router = useRouter()
-
     const [isHovering, setIsHovered] = useState(false);
     const onMouseEnter = () => setIsHovered(true);
     const onMouseLeave = () => setIsHovered(false);
@@ -24,7 +23,6 @@ export default function Navbar() {
             else {
                 setAuth(false)
             }
-            console.log(res, auth)
         })
     }, [])
 
@@ -49,15 +47,9 @@ export default function Navbar() {
                         )}
                     </Link>
                 </div>
-                <button data-collapse-toggle="navbar-default" type="button" className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm rounded-lg md:hidden" aria-controls="navbar-default" aria-expanded="false">
-                    <span className="sr-only">Open main menu</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" height="100" width="100" fill="currentColor" className="bi bi-list" viewBox="0 0 16 16">
-                        <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5" />
-                    </svg>
-                </button>
 
-                <div className="hidden w-full md:block md:w-auto" id="navbar-default">
-                    <ul className="flex flex-col p-4 md:p-0 mt-4 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0">
+                <div className="" id="navbar-default">
+                    <ul className="flex p-0 flex-row space-x-8 rtl:space-x-reverse mt-0">
                         {
                             auth ? (
                                 <>

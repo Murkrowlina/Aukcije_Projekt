@@ -1,4 +1,5 @@
 'use client'
+
 import Footer from '@/app/_components/Footer'
 import Navbar from '../../../_components/Navbar'
 import axios from 'axios'
@@ -25,7 +26,10 @@ export default function Register() {
 
         try {
             const response = await axios.post("http://localhost:3001/register", values, { withCredentials: true })
-            router.replace('/user/login')
+            if(response.data.Status == "Success") return router.replace('/user/login')
+            document.getElementById("status").classList.add("block")
+            document.getElementById("status").classList.remove("hidden")
+            console.log(response);
         } catch (error) {
             console.log(error)
         }
@@ -35,6 +39,9 @@ export default function Register() {
         <div>
             <Navbar></Navbar>
             <main className="flex flex-col min-h-screen items-center gap-[2rem] p-[3rem]">
+                <div className="hidden" id="status">
+                    <p className="text-2xl font-extrabold text-rose-600">Email već postoji.</p>
+                </div>
                 <form className="flex flex-col gap-6 text-xl" onSubmit={handleSubmit}>
                     <div className="flex flex-row gap-6">
                         <div>
